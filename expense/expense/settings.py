@@ -26,7 +26,23 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-n)v7nz9n#ajku5$z3_%)8t7=yi
 
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',') if host.strip()]
+configured_hosts = [
+    host.strip()
+    for host in os.getenv('ALLOWED_HOSTS', '').split(',')
+    if host.strip()
+]
+vercel_hosts = [
+    os.getenv('VERCEL_URL', '').strip(),
+    os.getenv('VERCEL_PROJECT_PRODUCTION_URL', '').strip(),
+]
+ALLOWED_HOSTS = list(dict.fromkeys(
+    configured_hosts
+    + ['.vercel.app']
+    + [host for host in vercel_hosts if host]
+))
+
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -121,6 +137,24 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ] if (BASE_DIR / 'static').exists() else []
+
+csrf_origin_values = [
+    'https://*.vercel.app',
+    os.getenv('CSRF_TRUSTED_ORIGINS', ''),
+    os.getenv('VERCEL_URL', ''),
+    os.getenv('VERCEL_PROJECT_PRODUCTION_URL', ''),
+    os.getenv('SITE_URL', ''),
+    os.getenv('CSRF_ORIGIN', ''),
+]
+csrf_origins = []
+for value in csrf_origin_values:
+    for origin in value.split(','):
+        origin = origin.strip()
+        if origin and not origin.startswith(('http://', 'https://')):
+            origin = 'https://' + origin
+        if origin:
+            csrf_origins.append(origin)
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(csrf_origins))
 
 # Authentication URLs
 LOGIN_URL = 'login'
