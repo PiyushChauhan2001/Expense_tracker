@@ -1,70 +1,445 @@
 {% extends "base.html" %} 
+{% block title %}Dashboard | Expense Tracker{% endblock %}
+
 {% block start %}
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
 
+    @media (min-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        .full-width {
+            grid-column: span 2;
+        }
+    }
 
-<h2>Expense Tracker</h2>
+    .card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: var(--card-shadow);
+        backdrop-filter: blur(12px);
+    }
 
-<div class="container">
-  <h4>Your Balance</h4>
-  <h1 id="balance">${{profile.balance}}</h1>
+    .metrics-header {
+        margin-bottom: 24px;
+    }
 
-  <div class="inc-exp-container">
-    <div>
-      <h4>Income</h4>
-      <p id="money-plus" class="money plus">+${{profile.income}}</p>
-    </div>
-    <div>
-      <h4>Expense</h4>
-      <p id="money-minus" class="money minus">-${{profile.expenses}}</p>
-    </div>
-  </div>
+    .metrics-header h2 {
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
 
-  <h3>History</h3>
-  <ul id="list" class="list">
+    .metrics-header p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        margin-top: 4px;
+    }
 
-    {% for expense in expenses%}
-    {% if expense.expense_type == 'Positive'%}
-    <li class="plus">
-      {{expense.name}} <span>+${{expense.amount}}</span>
-    </li>
-    {% else %}
-    <li class="minus">
-      {{expense.name}} <span>-${{expense.amount}}</span>
-    </li>
-    {% endif %}
-    {% endfor %}
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
 
+    .summary-card {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-md);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+    }
 
-  </ul>
+    .summary-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+    }
 
-  <h3>Add new transaction</h3>
-  <form id="form" method="POST">
-    {% csrf_token %}
-    <div class="form-control">
-      <label for="text">Text</label>
-      <input type="text" required name="text" id="text" placeholder="Enter text..." />
-    </div>
-    <div class="form-control">
-      <label for="amount"
-        >Amount <br />
-        (negative - expense, positive - income)</label
-      >
-      <input type="number" required name="amount" id="amount" placeholder="Enter amount..." />
-    </div>
+    .card-balance::before { background: var(--primary-accent); }
+    .card-income::before { background: var(--success); }
+    .card-expense::before { background: var(--danger); }
 
-    <div class="form-control">
-      <label for="text">Text</label>
-      <select name="expense_type" required class="form-control">
-        <option value="Positive">Positive</option>
-        <option value="Negative">Negative</option>
-      </select>
-    </div>
-    <button class="btn" type="submit">Add transaction</button>
-  </form>
+    .card-title {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .card-value {
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -1px;
+    }
+
+    .card-balance .card-value { color: #ffffff; }
+    .card-income .card-value { color: var(--success); }
+    .card-expense .card-value { color: var(--danger); }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    .form-control {
+        width: 100%;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-sm);
+        padding: 12px 16px;
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-accent);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .form-control select {
+        appearance: none;
+    }
+
+    select.form-control option {
+        background: #1e293b;
+        color: #ffffff;
+    }
+
+    .btn-submit {
+        width: 100%;
+        background: var(--primary-accent);
+        color: #ffffff;
+        border: none;
+        padding: 14px;
+        border-radius: var(--radius-sm);
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+        margin-top: 8px;
+    }
+
+    .btn-submit:hover {
+        background: var(--primary-accent-hover);
+    }
+    .btn-submit:active {
+        transform: scale(0.99);
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .transaction-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .transaction-item {
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .transaction-item:hover {
+        transform: translateX(4px);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .transaction-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .badge-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    .badge-positive {
+        background: var(--success-glow);
+        color: var(--success);
+    }
+
+    .badge-negative {
+        background: var(--danger-glow);
+        color: var(--danger);
+    }
+
+    .tx-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .tx-name {
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .tx-date {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .tx-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .tx-amount {
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    .tx-amount.pos { color: var(--success); }
+    .tx-amount.neg { color: var(--danger); }
+
+    .btn-delete {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: color 0.2s, background 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-delete:hover {
+        color: var(--danger);
+        background: var(--danger-glow);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 32px 16px;
+        color: var(--text-muted);
+    }
+
+    .empty-state i {
+        font-size: 36px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 220px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+
+<div class="metrics-header">
+    <h2>Financial Overview</h2>
+    <p>Track your income, expenses, and current wallet balance.</p>
 </div>
 
+<!-- Summary Cards -->
+<div class="summary-cards">
+    <div class="summary-card card-balance">
+        <div class="card-title">
+            <i class="fa-solid fa-wallet"></i> Net Balance
+        </div>
+        <div class="card-value">${{ profile.balance|floatformat:2 }}</div>
+    </div>
+    <div class="summary-card card-income">
+        <div class="card-title">
+            <i class="fa-solid fa-arrow-trend-up"></i> Total Income
+        </div>
+        <div class="card-value">+${{ profile.income|floatformat:2 }}</div>
+    </div>
+    <div class="summary-card card-expense">
+        <div class="card-title">
+            <i class="fa-solid fa-arrow-trend-down"></i> Total Expenses
+        </div>
+        <div class="card-value">-${{ profile.expenses|floatformat:2 }}</div>
+    </div>
+</div>
 
+<div class="dashboard-grid">
+    <!-- Form Card -->
+    <div class="card">
+        <div class="section-title">
+            <span><i class="fa-solid fa-plus-circle"></i> Add Transaction</span>
+        </div>
+        <form method="POST" action="{% url 'home' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="text">Description / Title</label>
+                <input type="text" required name="text" id="text" class="form-control" placeholder="e.g. Monthly Salary, Grocery, Rent" />
+            </div>
 
+            <div class="form-group">
+                <label for="amount">Amount ($)</label>
+                <input type="number" step="0.01" min="0.01" required name="amount" id="amount" class="form-control" placeholder="0.00" />
+            </div>
 
+            <div class="form-group">
+                <label for="expense_type">Transaction Type</label>
+                <select name="expense_type" id="expense_type" required class="form-control">
+                    <option value="Positive">Positive (+ Income)</option>
+                    <option value="Negative">Negative (- Expense)</option>
+                </select>
+            </div>
 
+            <button type="submit" class="btn-submit">
+                <i class="fa-solid fa-paper-plane"></i> Submit Transaction
+            </button>
+        </form>
+    </div>
+
+    <!-- Analytics Chart Card -->
+    <div class="card">
+        <div class="section-title">
+            <span><i class="fa-solid fa-chart-pie"></i> Financial Breakdown</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="financeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- History List Card -->
+    <div class="card full-width">
+        <div class="section-title">
+            <span><i class="fa-solid fa-list-check"></i> Transaction History</span>
+            <span style="font-size: 12px; color: var(--text-muted);">{{ expenses|length }} item(s)</span>
+        </div>
+
+        {% if expenses %}
+            <ul class="transaction-list">
+                {% for expense in expenses %}
+                    <li class="transaction-item">
+                        <div class="transaction-info">
+                            <div class="badge-icon {% if expense.expense_type == 'Positive' %}badge-positive{% else %}badge-negative{% endif %}">
+                                <i class="fa-solid {% if expense.expense_type == 'Positive' %}fa-arrow-down-left{% else %}fa-arrow-up-right{% endif %}"></i>
+                            </div>
+                            <div class="tx-details">
+                                <span class="tx-name">{{ expense.name }}</span>
+                                <span class="tx-date">{{ expense.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <div class="tx-right">
+                            <span class="tx-amount {% if expense.expense_type == 'Positive' %}pos{% else %}neg{% endif %}">
+                                {% if expense.expense_type == 'Positive' %}+{% else %}-{% endif %}${{ expense.amount|floatformat:2 }}
+                            </span>
+                            <a href="{% url 'delete_expense' expense.pk %}" class="btn-delete" title="Delete Transaction" onclick="return confirm('Are you sure you want to delete this transaction?')">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="empty-state">
+                <i class="fa-solid fa-receipt"></i>
+                <p>No transactions recorded yet.</p>
+                <small>Use the form above to add your first income or expense.</small>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById('financeChart').getContext('2d');
+        const income = {{ profile.income|default:0 }};
+        const expenses = {{ profile.expenses|default:0 }};
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Income', 'Expenses'],
+                datasets: [{
+                    data: [income, expenses],
+                    backgroundColor: ['#10b981', '#ef4444'],
+                    borderColor: ['#0f172a', '#0f172a'],
+                    borderWidth: 3,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#94a3b8',
+                            font: { family: 'Inter', size: 13 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ' ' + context.label + ': $' + context.raw.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    });
+</script>
 {% endblock %}

@@ -1,179 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  
-    <title>Django Expense Tracker</title>
+    <title>{% block title %}Expense Tracker{% endblock %}</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(99, 102, 241, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --primary-accent: #6366f1;
+            --primary-accent-hover: #4f46e5;
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.15);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
 
-@import url('https://fonts.googleapis.com/css?family=Lato&display=swap');
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-:root {
-  --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-}
+        body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-* {
-  box-sizing: border-box;
-}
+        .navbar {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 24px;
+        }
 
-body {
-  background-color: #f7f7f7;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  margin: 0;
-  font-family: 'Lato', sans-serif;
-}
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
 
-.container {
-  margin: 30px auto;
-  width: 350px;
-}
+        .navbar-brand i {
+            color: var(--primary-accent);
+            font-size: 24px;
+            background: rgba(99, 102, 241, 0.15);
+            padding: 10px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
 
-h1 {
-  letter-spacing: 1px;
-  margin: 0;
-}
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
 
-h3 {
-  border-bottom: 1px solid #bbb;
-  padding-bottom: 10px;
-  margin: 40px 0 10px;
-}
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            padding: 8px 14px;
+            border-radius: 30px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
 
-h4 {
-  margin: 0;
-  text-transform: uppercase;
-}
+        .user-pill i {
+            color: var(--primary-accent);
+        }
 
-.inc-exp-container {
-  background-color: #fff;
-  box-shadow: var(--box-shadow);
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  margin: 20px 0;
-}
+        .btn-nav {
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
 
-.inc-exp-container > div {
-  flex: 1;
-  text-align: center;
-}
+        .btn-nav-outline {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--card-border);
+        }
 
-.inc-exp-container > div:first-of-type {
-  border-right: 1px solid #dedede;
-}
+        .btn-nav-outline:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
 
-.money {
-  font-size: 20px;
-  letter-spacing: 1px;
-  margin: 5px 0;
-}
+        .btn-nav-accent {
+            background: var(--primary-accent);
+            color: #ffffff;
+            border: 1px solid transparent;
+        }
 
-.money.plus {
-  color: #2ecc71;
-}
+        .btn-nav-accent:hover {
+            background: var(--primary-accent-hover);
+        }
 
-.money.minus {
-  color: #c0392b;
-}
+        .main-container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 0 24px 40px;
+            flex: 1;
+        }
 
-label {
-  display: inline-block;
-  margin: 10px 0;
-}
+        .alerts-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
 
-input[type='text'],
-input[type='number'] {
-  border: 1px solid #dedede;
-  border-radius: 2px;
-  display: block;
-  font-size: 16px;
-  padding: 10px;
-  width: 100%;
-}
+        .alert {
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(8px);
+            border: 1px solid transparent;
+            animation: fadeIn 0.3s ease;
+        }
 
-.btn {
-  cursor: pointer;
-  background-color: #9c88ff;
-  box-shadow: var(--box-shadow);
-  color: #fff;
-  border: 0;
-  display: block;
-  font-size: 16px;
-  margin: 10px 0 30px;
-  padding: 10px;
-  width: 100%;
-}
+        .alert-success {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
 
-.btn:focus,
-.delete-btn:focus {
-  outline: 0;
-}
+        .alert-error {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
 
-.list {
-  list-style-type: none;
-  padding: 0;
-  margin-bottom: 40px;
-}
+        .alert-info {
+            background: rgba(99, 102, 241, 0.12);
+            border-color: rgba(99, 102, 241, 0.3);
+            color: #818cf8;
+        }
 
-.list li {
-  background-color: #fff;
-  box-shadow: var(--box-shadow);
-  color: #333;
-  display: flex;
-  justify-content: space-between;
-  position: relative;
-  padding: 10px;
-  margin: 10px 0;
-}
+        .alert-close {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 16px;
+            opacity: 0.7;
+        }
+        .alert-close:hover { opacity: 1; }
 
-.list li.plus {
-  border-right: 5px solid #2ecc71;
-}
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-.list li.minus {
-  border-right: 5px solid #c0392b;
-}
-
-.delete-btn {
-  cursor: pointer;
-  background-color: #e74c3c;
-  border: 0;
-  color: #fff;
-  font-size: 20px;
-  line-height: 20px;
-  padding: 2px 5px;
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translate(-100%, -50%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.list li:hover .delete-btn {
-  opacity: 1;
-}
-
-
-
-
+        .footer {
+            width: 100%;
+            max-width: 1000px;
+            padding: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--card-border);
+        }
     </style>
-  </head>
+</head>
+<body>
+    <header class="navbar">
+        <a href="{% url 'home' %}" class="navbar-brand">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Expense Tracker</span>
+        </a>
 
-  <body>
+        <div class="nav-actions">
+            {% if user.is_authenticated %}
+                <div class="user-pill">
+                    <i class="fa-solid fa-user-circle"></i>
+                    <span>{{ user.username }}</span>
+                </div>
+                <a href="{% url 'logout' %}" class="btn-nav btn-nav-outline">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn-nav btn-nav-outline">Sign In</a>
+                <a href="{% url 'signup' %}" class="btn-nav btn-nav-accent">Get Started</a>
+            {% endif %}
+        </div>
+    </header>
 
-    {% block start %}
-  
+    <main class="main-container">
+        {% if messages %}
+            <div class="alerts-container">
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}">
+                        <span>
+                            <i class="fa-solid {% if message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'success' %}fa-circle-check{% else %}fa-circle-info{% endif %}"></i>
+                            {{ message }}
+                        </span>
+                        <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
 
-    {% endblock %}
+        {% block start %}{% endblock %}
+    </main>
 
-
-  </body>
+    <footer class="footer">
+        &copy; {% now "Y" %} Expense Tracker &bull; Secure Personal Finance Management
+    </footer>
+</body>
 </html>
